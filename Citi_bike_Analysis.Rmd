@@ -1,0 +1,521 @@
+
+
+---
+title: <center> <h1><span style="font-family:Monaco;color:#003B70">Citibike Trip Analysis for Jan 2020</span></h1> </center>
+author: <center> <h4><span style="font-family:Times New Roman;color:#003B70">Group 12 (Theertha Pillai, Nikhil Phatale, Ketan Kshirsagar)</span></h4> </center>
+output: html_document
+---
+![](/Users/theerthapillai/Desktop/brand_logo.png)
+```{r setup, include=FALSE}
+knitr::opts_chunk$set( warning = FALSE, message = FALSE,comment = NA)
+```
+
+<p>&nbsp;<p>  
+
+<h2><span style="font-family:Monaco;color:#003B70">
+Table of Contents  
+</span></h2><h4><span style="font-family:Times New Roman;color:#003B70"> 
+1. Purpose  
+2. Background  
+3. Data Analysis  
+  3.1. Demographic Analysis  
+  3.2. Time Series Analysis  
+  3.3. Geographic Analysis  
+  3.4. Year-Over-Year Analysis  
+4. Conclusion  
+5. References
+<p>&nbsp;<p>  
+<p>&nbsp;<p>  
+
+<h2><span style="font-family:Monaco;color:#003B70">1. Purpose</span></h2>
+<h4><span style="font-family:Times New Roman;color:#003B70"> 
+This report analyses City Bike's data from New York city, for the month of January 2020. We have attempted to analyse the data from various perspectives such as Demography, Time-Series, Geography, etc. To do so, we have created visualizations by using different types of plots such as Leaflets, Network Diagrams, Line Graph, Bar Chart, Donut Graph, Scatter Plot and Pi Chart. Some of these visualizations are dynamic, helping the reader interact with data and fetch valuable insights from the same. Additionally, we have also provided our inferences and suggestions based on our comprehension about the data.</span></h4>
+
+<p>&nbsp;<p>  
+<p>&nbsp;<p>  
+
+<h2><span style="font-family:Monaco;color:#003B70">2. Background</span></h2>
+<h4><span style="font-family:Times New Roman;color:#003B70">Citi Bike is the USA's largest and privately operated public bicycle sharing program serving the New York City boroughs of the Bronx, Brooklyn, Manhattan, and Queens, as well as Jersey City, New Jersey, and Hoboken, New Jersey. The dataset used here for analyzing has been retrieved from Citi Bike's website which contains real time data for the bicycle service.
+</span></h2>
+<h4><span style="font-family:Times New Roman;color:#003B70">From this data, we are trying to inspect the data from different viewpoints and discover patterns and inferences from it. This report has touched upon various aspects of data and answers questions like; Who are the customers of Citi Bike?, How does factors such as Time, Weather and Day affect the sales? Which geographic location is more profitable than others?, How has business been doing for the past three years?, etc.
+</span></h4>
+<h4><span style="font-family:Times New Roman;color:#003B70">Moreover, we have taken data from Jan 2020 to 2022 to understand the company's business during pre-pandemic, pademic and post-pandemic situation.</span></h4>
+
+<p>&nbsp;<p>  
+<p>&nbsp;<p>  
+
+<h2><span style="font-family:Monaco;color:#003B70">3. Data Analysis</span></h2>
+<h4><span style="font-family:Times New Roman;color:#003B70"> The Data Analysis is done in four sections i.e. Demographic, Time-Series, Geographic and Year-Over-Year Analysis</span></h4>
+
+
+<h3><span style="font-family:Monaco;color:#003B70">3.1. Demographic Analysis</span></h3>
+<h4><span style="font-family:Times New Roman;color:#003B70">To Analyse the demographical trends in data for Jan 2020, we have plotted the following graphs. The Pi chart shows consumer segments based on User Type i.e. Customers and Subscribers. Customers are one time users who can rent a Citi Bike from a rental location without a membership. Subscribers, as the name suggests, holds membership which can be annual, monthly or casual. The donut chart provides us a gender-based segregation of customers and subscribers. The stacked-bar graph provides an overview of customer based on their age-groups and gender.
+</span></h4>
+<p>&nbsp;<p>
+<p>&nbsp;<p>
+```{r Graph1,echo=FALSE, results='hide'}
+#Total # of bike users in the month of January over three years
+library(ggplot2)
+library(showtext)
+library(plyr)
+library(dplyr)
+library(tidyverse)
+library(grid)
+library(gridExtra)
+library(lubridate)
+citibike_Jan2020 <- read.csv(file = '/Users/theerthapillai/Downloads/Courses/Fall 22/Computation and Visualization/hw/Hackathon/202001-citibike-tripdata.csv', na.strings = "")
+df_jan20_pppp <- citibike_Jan2020 %>% 
+  group_by(usertype) %>%
+  dplyr::summarise(records= n())
+
+
+df_jan20_pppp <- df_jan20_pppp %>% 
+  mutate(prop = records / sum(df_jan20_pppp$records) *100) %>%
+  mutate(ypos = cumsum(prop)- 0.5*prop )
+df_jan20_pppp$prop <- substr(df_jan20_pppp$prop,1,5)
+
+plot_a <- ggplot(df_jan20_pppp, aes(x="", y=records, fill=usertype)) +
+  geom_bar(stat="identity", width=1) +
+  coord_polar("y") +
+  theme_void() +
+  geom_text(aes(label = as.double(prop)), color = "white", size=6, position = position_stack(vjust = 0.3)) +
+  scale_fill_manual(values=c("#DB230B","#186FCB")) +
+  guides(fill = guide_legend(title = "User Category")) +
+  ggtitle("Fig 1: Percentage Distribution \n of Consumer Segments in Jan 2020")+
+  theme(text = element_text(family = "Times New Roman",size = 12,color = "#003B70"))+
+theme(plot.title = element_text(size = 12,face = "bold", color = "#003B70"))
+
+#Plot b
+df_jan20_donut_f_m <- citibike_Jan2020 %>% 
+  group_by(usertype, gender) %>%
+  dplyr::summarise(records= n())
+
+df_jan20_donut_f_m <- subset(df_jan20_donut_f_m, gender != 0)
+
+df_jan20_donut_f_m <- df_jan20_donut_f_m %>% 
+  mutate(gender = str_replace(gender, "1", "Male"))
+
+df_jan20_donut_f_m <- df_jan20_donut_f_m %>% 
+  mutate(gender = str_replace(gender, "2", "Female"))
+
+df_jan20_donut_f_m$fraction = df_jan20_donut_f_m$records / sum(df_jan20_donut_f_m$records)
+
+df_jan20_donut_f_m$ymax = cumsum(df_jan20_donut_f_m$fraction)
+
+df_jan20_donut_f_m$ymin = c(0, head(df_jan20_donut_f_m$ymax, n=-1))
+
+
+df_jan20_donut_f_m$labelPosition <- (df_jan20_donut_f_m$ymax + df_jan20_donut_f_m$ymin) / 2
+
+df_jan20_donut_f_m$label <- paste0(df_jan20_donut_f_m$gender," ", df_jan20_donut_f_m$usertype, "\n Value: ", df_jan20_donut_f_m$records)
+
+# Make the plot
+plot_b <- ggplot(df_jan20_donut_f_m, aes(ymax=ymax, ymin=ymin, xmax=4, xmin=3, fill=label)) +
+     geom_rect() +
+  ggtitle("Fig 2: Gender Classified User \n Segments in Jan 2020")+
+     geom_label( x=4, aes(y=labelPosition, label=label), size=2,color ="white") +
+     scale_fill_manual(values=c('#003A72', '#0094DC', '#DB230B','#186FCB'))+
+     coord_polar(theta="y") + # Try to remove that to understand how the chart is built initially
+     xlim(c(2, 4)) + # Try to remove that to see how to make a pie chart
+     theme(panel.background = element_rect(fill = "white"),
+        panel.grid = element_blank(),
+        axis.title = element_blank(),
+        axis.ticks = element_blank(),
+        axis.text = element_blank()) +
+  theme(legend.position = 'none')+
+  theme(plot.title = element_text(size = 12,face = "bold",color = "#003B70"))
+
+customer_age_groups <-  citibike_Jan2020 %>% 
+  group_by(birth.year, gender) %>% 
+  dplyr::summarise(total_users=n()) %>% 
+  drop_na() %>% 
+  arrange(desc(total_users)) 
+
+typeof(customer_age_groups$birth.year)
+today_year = as.integer(2022)
+typeof(customer_age_groups$customer_age)
+customer_age_groups$customer_age <-today_year-customer_age_groups$birth.year
+temp <- customer_age_groups
+
+temp <- temp %>% 
+  mutate(
+    # Create categories
+    age_group = dplyr::case_when(
+      customer_age <= 12            ~ "0-12",
+      customer_age > 12 & customer_age <= 19 ~ "13-19",
+      customer_age > 19 & customer_age <= 29 ~ "20-29",
+      customer_age > 29 & customer_age <= 39 ~ "30-39",
+      customer_age > 39 & customer_age <= 49 ~ "40-49",
+      customer_age > 49 & customer_age <= 59 ~ "50-59",
+      customer_age > 59             ~ "60+"
+    ),
+    # Convert to factor
+    age_group = factor(
+      age_group,
+      level = c("0-12", "13-19","20-29", "30-39","40-49","50-59", "60+")
+    )
+  )
+plot_c <- ggplot(data=temp, aes(x = factor(age_group) , y=total_users, fill=factor(gender))) +
+  geom_bar(stat="identity") + 
+  ggtitle("Fig 3: Customer Age-Group Distribution") +
+  labs(y= "Total No. of Customers", x = "Age Group of Customers",fill = "Gender") + 
+  scale_x_discrete(labels = function(x) str_wrap(x, width=50))+
+  scale_fill_manual(values = c("#00ccff","#003A72","#DB230B" ), labels=c('Unknown', 'Male', 'Female'))+
+  theme(text = element_text(family = "Times New Roman",size = 12,color = "#003B70"))+
+theme(plot.title = element_text(size = 12,face = "bold",color = "#003B70"))+
+  theme(panel.background = element_rect(fill = "#FFFFFF"))+theme(plot.background = element_rect(fill = "#FFFFFF"))
+
+
+grid.arrange(arrangeGrob(plot_a,plot_b, ncol=2), 
+             arrangeGrob(plot_c),nrow =2)
+#--------
+```
+
+<p>&nbsp;<p>  
+
+<h4><span style="font-family:Times New Roman;color:#003B70">The above visualizations clearly states that a major chunk of Citi Bike's Revenue is generated through subscriptions. Data provided on Citi Bike's website suggest revenue of approximately $0.97M for the month of Jan 2020 just through subscriptions. It can also be inferred that, 75% of the total users are male subscribers. R&D can be done and appropriate strategies can be established to promote Citi Bike's to Female Customers. Looking at the Bar plot, we can see that the users below the age of 20 are negligible. Citi Bikes can potentially look into the opportunity to invest into rental bikes for kids and young adults.</span></h4>
+
+<p>&nbsp;<p>
+
+<h4><span style="font-family:Times New Roman;color:#003B70">The next two line graphs provide an overview of number of bikes used per day and categorize it based on user type and gender. The third graph was created using external data to find the co-relation between bikes used and temperature on that particular day</span></h4>
+<p>&nbsp;<p>
+<p>&nbsp;<p>
+
+```{r Graph2,echo=FALSE, results='hide'}
+
+df_jan20_date_eval <- citibike_Jan2020
+df_jan20_date_eval$starttime =as.Date(as.POSIXlt(df_jan20_date_eval$starttime, format = "%Y-%m-%d %H:%M:%S"), tz = "EST")
+
+
+df_jan20_sub <- df_jan20_date_eval %>%
+  group_by(usertype, starttime) %>%
+  dplyr::summarise(records= n()) 
+
+df_jan20_sub$week <- wday(df_jan20_sub$starttime, label=TRUE)
+
+plot_d <- ggplot(df_jan20_sub,aes(x=starttime,y=records,group=usertype)) +
+  geom_line(aes(color=usertype)) +
+  labs(x = "Days in Jan 2020",
+       y = "Total rides",
+      color = "User Type",
+       title = "Fig 4: Day-wise Distribution of Customers"
+  ) +
+  theme(plot.title = element_text(color = "#003B70", size=12, face="bold", hjust = 0.5),
+        axis.title.x = element_text( size=12,color = "#003B70"),
+        axis.title.y = element_text( size=12,color = "#003B70"),
+        text = element_text(family = "Times New Roman",size = 12)
+        
+  )+
+  scale_color_manual(values=c("#DB230B","#186FCB"))+
+  scale_x_date(date_breaks = '3 day', date_labels = '%b %d\n%a')+
+  theme(panel.background = element_rect(fill = "#FFFFFF"))+theme(plot.background = element_rect(fill = "#FFFFFF"))
+
+options(dplyr.summarise.inform = FALSE)
+
+#Converted starttime from char to date
+df_jan20_date_eval <- citibike_Jan2020
+df_jan20_date_eval$starttime =as.Date(as.POSIXlt(df_jan20_date_eval$starttime, format = "%Y-%m-%d %H:%M:%S"), tz = "EST")
+
+#Filtered for Males and Females, excluded unknown gender 
+df_filter_male_female <- subset(df_jan20_date_eval, gender != 0)
+
+
+#sum for gender wise trips for respective dates
+df_jan20_date_sum <- df_filter_male_female %>%
+  group_by(starttime, gender) %>%
+  dplyr::summarise(records= n())
+
+
+df_jan20_date_sum <- df_jan20_date_sum %>% 
+  mutate(gender = str_replace(gender, "1", "Male"))
+
+df_jan20_date_sum <- df_jan20_date_sum %>% 
+  mutate(gender = str_replace(gender, "2", "Female")) %>%   arrange(desc(starttime)) 
+
+df_jan20_date_sum$Tavg =c("43","43","34","34","37","37","41","41","45","45","45","45","45","45",
+                          "48","48","43","43","37","37","32","32","30","30","41","41","28","28",
+                          "28","28","46","46","50","50","45","45","48","48","64","64","64","64",
+                          "48","48","34","34","41","41","43","43","45","45","41","41","48","48",
+                          "46","46","46","46","39","39")
+
+plot_e <- ggplot(df_jan20_date_sum,aes(x=starttime,y=records,group=gender)) +
+  geom_line(aes(color=gender)) +
+  labs(x = "Date(Jan 2020)",
+       y = "Total Rides",
+       color = "Gender",
+       title = "Fig 5: No. of Male riders vs Female riders"
+  ) +
+  theme(plot.title = element_text(color = "#003B70", size=12, face="bold", hjust = 0.5,family = "Times New Roman"),
+        axis.title.x = element_text(family = "Times New Roman", size=12,color = "#003B70"),
+        axis.title.y = element_text(family = "Times New Roman", size=12,color = "#003B70") )+
+  scale_color_manual(values=c('#FFB6C1','#00CED1'))+
+  theme(panel.background = element_rect(fill = "#FFFFFF"))+theme(plot.background = element_rect(fill = "#FFFFFF"))
+
+plot_f <- ggplot(data=df_jan20_date_sum, aes(x=starttime, y=Tavg, group=gender, colour=gender)) +
+  geom_line() +
+  geom_point()+
+  ggtitle("Fig 6: Temperature in NYC in the month of Jan 2020") +
+  labs(y= "Temperature", x = "Date(Jan 2020)") +
+  theme(legend.position = "none",
+        plot.title = element_text(size = 12,face="bold",color = "#003B70", hjust = 0.5),
+        text = element_text(family = "Times New Roman",size = 12,color = "#003B70")
+        )+
+  scale_color_manual(values=c('#186FCB','#003B70'))+
+  theme(panel.background = element_rect(fill = "#FFFFFF"))+theme(plot.background = element_rect(fill = "#FFFFFF"))
+
+grid.arrange(plot_d,plot_e, plot_f)
+```
+
+<p>&nbsp;<p>
+<h4><span style="font-family:Times New Roman;color:#003B70">From the first graph it can be concluded that there is no significant co-relation between the day of the week and bikes used by subscribers. However, their is a considerable amount of increase in the number of bikes used by customers on weekends. Therefore, for the fraction of people who only uses Citi Bikes on weekends and do not have a yearly membership, a weekend pass would be a good idea to implement. The second line graph shows that females use less bikes as compared to men but the overall usage trend for both genders remain the same. The number of bikes used per day also varied with temperature. The third graph implies that whenever the temperature is low, bike usage for that day goes down as well.</span></h4>
+<p>&nbsp;<p>
+<h3><span style="font-family:Monaco;color:#003B70">3.2. Time-Series Analysis</span></h3>
+<h4><span style="font-family:Times New Roman;color:#003B70"> The Time series graphs help us analyse data patterns using data collected over a specific time interval. The first graph helps us understand which hour of the day is most preferred by customers for renting bicycles. The second graph is an interactive graph that shows the average time period for which the bike was used. This graph can we views as either a Scatter Plot or a Bar Graph. 
+</span></h4>
+<p>&nbsp;<p>
+<p>&nbsp;<p>
+
+```{r Graph7,echo=FALSE, results='hide'} 
+#Max no of bikes used during which time frame
+
+Temp_trip2 <- separate(citibike_Jan2020, col = starttime, 
+                into=c('StartDate','Time'), sep= ' ', remove = FALSE )
+Temp_trip2$Time_min <- substr(Temp_trip2$Time,1,2)
+
+Time_wise <- Temp_trip2 %>% group_by(Time_min) %>% dplyr::summarise(count_n = n())
+
+
+ggplot(data=Time_wise, aes(x=factor(Time_min), y=count_n)) + geom_bar(stat="identity",fill="#003B70") + ggtitle("Fig 7: Count of users in each hour of the day") + labs(y= "No of Users ", x = "Hour of the Day") + geom_text(aes(y=count_n, label=count_n), vjust=1.6, 
+       color="white", size=1.8)+ theme(text = element_text(family = "Times New Roman",size = 12,color = "#003B70"))+ theme(plot.title = element_text(size = 12,face = "bold",color = "#003B70"))+
+  theme(panel.background = element_rect(fill = "#FFFFF0"))+theme(plot.background = element_rect(fill = "#FFFFF0"))+
+    theme(panel.background = element_rect(fill = "#FFFFFF"))+theme(plot.background = element_rect(fill = "#FFFFFF"))
+
+```
+<p>&nbsp;<p>
+
+```{r Graph8,echo=FALSE}
+
+library(plotly)
+#Average use of bikes vs time
+Temp_trip2$tripduration_min <- Temp_trip2$tripduration/60
+Trip_Min <-  Temp_trip2 %>% group_by(tripduration_min) %>% dplyr::summarise(no_of_users = n()) %>% drop_na()
+
+Grouped_Trip_Min <- Trip_Min %>% 
+  mutate(
+    time_group = dplyr::case_when(
+      tripduration_min > 0 & tripduration_min <= 10 ~ "0-10",
+      tripduration_min > 10 & tripduration_min <= 20 ~ "10-20",
+      tripduration_min > 20 & tripduration_min <= 30 ~ "20-30",
+      tripduration_min > 30 & tripduration_min <= 60 ~ "30-60",
+      tripduration_min > 60 & tripduration_min <= 120 ~ "60-120",
+      tripduration_min > 120 & tripduration_min <= 240 ~ "120-240",
+      tripduration_min > 240 & tripduration_min <= 360 ~ "240-360",
+      tripduration_min > 360 & tripduration_min <= 480 ~ "360-480",
+      tripduration_min > 480 ~ "480+"
+    ),
+    time_group = factor(
+      time_group,
+      level = c("0-10","10-20","20-30","30-60", "120-240", "240-360","360-480","480+")
+      )
+  )
+
+
+final <- Grouped_Trip_Min %>% group_by(time_group) %>% dplyr::summarise(Total=sum(no_of_users)) 
+
+final_arranged <-final %>% mutate(
+    Rank_T = dplyr::case_when(
+      time_group == "0-10" ~ 1,
+      time_group == "10-20" ~ 2,
+      time_group == "20-30" ~ 3,
+      time_group == "30-60" ~ 4,
+      time_group == "60-120" ~ 5,
+      time_group == "120-240" ~ 6,
+      time_group == "240-360" ~ 7,
+      time_group == "360-480" ~ 8,
+      time_group == "480+" ~ 9)) %>% arrange(Rank_T)
+
+output_1 <- plot_ly(final_arranged, x= ~time_group, y=~Total)
+
+output_1 <- output_1 %>% add_markers(marker = list(line = list(color = "black", width = 1)))
+output_1 <- output_1 %>% layout(
+    title = "Fig 8: Average no of time",
+    xaxis = list(domain = c(0.1, 1), title = "Time in Minutes"),
+    yaxis = list(title = "No of users"),
+    updatemenus = list(
+      list(
+        y = 0.8,
+        buttons = list(
+
+          list(method = "restyle",
+               args = list("type", "scatter"),
+               label = "Scatter"),
+
+          list(method = "restyle",
+               args = list("type", "bar"),
+               label = "Bar")))
+    ))
+    
+output_1
+
+```
+
+<p>&nbsp;<p>
+<h4><span style="font-family:Times New Roman;color:#003B70">We can see that the first graph shows a major spike in the number of bikes used during the start and end of office hours i.e. 8 a.m. to 6 p.m on weekdays. Solutions can be provided to boost the usage of bikes at other times of the weekday without affecting the current peak usage times. Majority of people use bikes for 0-30 mins which will lead to more number of bikes being frequently available for customers. More schemes can be made by partnering with the government to boost tourism during the office hours which can generate more traffic during the office hours.</span></h4>
+
+<p>&nbsp;<p>
+
+<h3><span style="font-family:Monaco;color:#003B70">3.3. Geographic Analysis</span></h3>
+<h4><span style="font-family:Times New Roman;color:#003B70">Geographic Analysis helps find Geographic patterns using data. The below given leaflets provide a geographic representation of number of bikes picked and dropped per station along with its location. The bike locations have been color coded with color radiation to reflect the total no. of bikes picked/dropped from that station.
+</span></h4>
+
+<h6><span style="font-family:Monaco;color:#003B70">Click on the graph to get the details of station and no. of bikes picked </span></h6>
+<p>&nbsp;<p>
+```{r Graph5,echo=FALSE}
+#No of bikes picked and dropped per station
+
+library(leaflet)
+library(dplyr)
+
+bikes_picked_from <- citibike_Jan2020 %>% 
+  group_by(start.station.name,start.station.latitude,start.station.longitude) %>% 
+  dplyr::summarise(total_bikes_picked=n()) %>% 
+  drop_na() %>% 
+  dplyr::arrange(desc(total_bikes_picked)) 
+
+
+
+
+
+#Graph for picked
+bikes_picked_from <-bikes_picked_from %>%
+  mutate(popup_info=paste(start.station.name,"<br/>","Total Bikes Picked:",total_bikes_picked))
+colors_picked <- c("green","red")
+pal_picked <- colorFactor(colors_picked,bikes_picked_from$total_bikes_picked)
+
+plot_picked <- leaflet() %>% addTiles() %>% 
+  addCircleMarkers(data=bikes_picked_from,lat=~start.station.latitude,lng=~start.station.longitude, radius = ~3,popup = ~popup_info, color = ~pal_picked(total_bikes_picked))
+#here bright red stands for higest no. of bikes picked and dark green stands for lowest no of bikes picked
+plot_picked <- htmlwidgets::prependContent(plot_picked, htmltools::tags$h4("Fig 9: No. of Bikes Picked Per Station.",style="font-family:Times New Roman;color:#003B70"))
+plot_picked
+```
+
+```{r Graph5.1,echo=FALSE}
+library(leaflet)
+library(dplyr)
+bikes_dropped_at <- citibike_Jan2020 %>% 
+  group_by(end.station.name, end.station.latitude,end.station.longitude) %>% 
+  dplyr::summarise(total_bikes_droped=n()) %>% 
+  drop_na() %>% 
+  arrange(desc(total_bikes_droped)) 
+
+bikes_dropped_at <-bikes_dropped_at %>%
+  mutate(popup_info=paste(end.station.name,"<br/>","Total Bikes Dropped:",total_bikes_droped))
+colors_dropped <- c("yellow","blue")
+pal_dropped <- colorFactor(colors_dropped,bikes_dropped_at$total_bikes_droped)
+
+plot_dropped <- leaflet() %>% addTiles() %>% 
+  addCircleMarkers(data=bikes_dropped_at,lat=~end.station.latitude,lng=~end.station.longitude, radius = ~3,popup = ~popup_info, color = ~pal_dropped(total_bikes_droped))
+#here bright blue stands for higest no. of bikes picked and dark yellow stands for lowest no of bikes picked
+plot_dropped <- htmlwidgets::prependContent(plot_dropped, htmltools::tags$h4("Fig 10: No. of Bikes Dropped Per Station.",style="font-family:Times New Roman;color:#003B70"))
+plot_dropped
+```
+
+<h4><span style="font-family:Times New Roman;color:#003B70">As we can infer from the above leaflets, Manhattan area has the highest number of pickups and drops on most of its stations. Research can be done to capitalize this demand by understanding user activity. Some possible solutions can be to establish more stations within close proximity of the existing ones or increase the number of racks per station</span></h4>
+
+<p>&nbsp;<p>
+
+<h4><span style="font-family:Times New Roman;color:#003B70">We have used a network graph to display the frequently used routes to understand the flow of traffic. This will help Citi Bike innovate new ideas to improve services in these areas.</span></h4>
+
+<h6><span style="font-family:Monaco;color:#003B70">Hover over and drag a node(stations) to highlight its most connected routes.</span></h6>
+<p>&nbsp;<p>
+```{r Graph6,echo=FALSE}
+#Route tracking on bikes to understand traffic
+
+ #Route tracking on bikes to understand traffic (spatial graph?)
+library(networkD3)
+
+route_track <- citibike_Jan2020 %>% 
+  group_by(start.station.name, end.station.name,start.station.latitude,start.station.longitude,end.station.latitude,end.station.longitude) %>% 
+  dplyr::summarise(total_route=n()) %>% 
+  drop_na() %>% 
+  arrange(desc(total_route)) 
+
+top2000_route_track <- citibike_Jan2020 %>% 
+  group_by(start.station.name, end.station.name) %>% 
+  dplyr::summarise(total_route=n()) %>% 
+  drop_na() %>% 
+  arrange(desc(total_route)) 
+
+top2000_route_track<-head(top2000_route_track,2000)
+
+
+network_data <-data.frame(top2000_route_track$start.station.name,top2000_route_track$end.station.name)
+network_plot <- simpleNetwork(network_data)
+library(htmlwidgets)
+library(htmltools)
+
+network_plot <- htmlwidgets::prependContent(network_plot, htmltools::tags$h4("Fig 11: Route Tracking and Density",style="font-family:Times New Roman;color:#003B70"))
+network_plot
+
+```
+<p>&nbsp;<p>
+<h4><span style="font-family:Times New Roman;color:#003B70">The network above can be used to analyse the amount of bikes to be stationed at a particular location so that no station has empty stands during peak hours. We can also understand customer movement or their demand to drop a bike at a near-by location where there aren't any Citi Bike station yet, which will help expand the current network.</span></h4>
+<p>&nbsp;<p>
+<h3><span style="font-family:Monaco;color:#003B70">3.4. Year-Over-Year Analysis</span></h3>
+<h4><span style="font-family:Times New Roman;color:#003B70">Using additional datasets for Jan 2021 and Jan 2022, we have plotted a grouped bar chart to compare the total number of bikes used for the same month across three years.
+</span></h4>
+<p>&nbsp;<p>
+<p>&nbsp;<p>
+```{r Graph4,echo=FALSE,results='hide'}
+
+citibike_Jan2021 <- read.csv(file = '/Users/theerthapillai/Downloads/Courses/Fall 22/Computation and Visualization/hw/Hackathon/202101-citibike-tripdata.csv', na.strings = "")
+citibike_Jan2022 <- read.csv(file = '/Users/theerthapillai/Downloads/Courses/Fall 22/Computation and Visualization/hw/Hackathon/202201-citibike-tripdata.csv', na.strings = "")
+
+citibike_Jan2020 <- citibike_Jan2020 %>% drop_na()
+citibike_Jan2021 <- citibike_Jan2021 %>% drop_na()
+citibike_Jan2022 <- citibike_Jan2022 %>% drop_na()
+
+
+jan_data_over_years<- data.frame(Year =c("2020","2021","2022"),
+                                 Total.Users = c(nrow(citibike_Jan2020),nrow(citibike_Jan2021),nrow(citibike_Jan2022)),
+                                 Group = "January")
+                                 
+
+font_add(family="Monaco",regular="Monaco.ttf", bold="Monaco.ttf")
+showtext.auto()
+
+jan_data_over_years %>% ggplot(aes(x=Total.Users, y=Year,group=Group, fill=factor(Year)))+
+geom_bar(stat = 'identity', width = 1.8)+
+ggtitle("Fig 12: No. of Bike Users in the Month of January over 3 Years") +
+labs(y= "January Data over three years", x = "Total Customers",fill = "Year") +
+geom_text(aes(label = Total.Users), hjust =4.2, vjust = 3,color = "white")+
+scale_fill_manual(values=c('#003A72', '#186FCB', '#DB230B'),limits = c("2022", "2021", "2020"))+
+theme(text = element_text(family = "Times New Roman",size = 12, color="#003B70"))+
+theme(plot.title = element_text(size = 12, face = "bold",color="#003B70"))+
+  theme(panel.background = element_rect(fill = "#FFFFFF"))+theme(plot.background = element_rect(fill = "#FFFFFF"))
+
+```
+<p>&nbsp;<p>
+<h4><span style="font-family:Times New Roman;color:#003B70">The graph shows an overall decrease in the number of Citi Bikes used in January 2022 over the previous years. This might be a result of the Covid-19 pandemic or the Climate Change over these years. The trend can be expected to change this year as the pandemic has subceeded. 
+</span></h4>
+<p>&nbsp;<p>
+<p>&nbsp;<p>
+
+<h2><span style="font-family:Monaco;color:#003B70">4. Conclusion</span></h2>
+<h4><span style="font-family:Times New Roman;color:#003B70">The Citi Bike data examined and visualized in the above sections has helped us gain insights on the general trends and areas of improvements based on the inferences made after examining those trends. One of the major area of improvement can be understand why Citi Bikes are not being used by women - is the bike design one of the reason behind it? Another area of improvement is to introduce Citi Bikes for kids and young adults. Citi Bike can also look at different ideas to boost use of bikes for longer duration during office hours. Introduction of a weekend pass is another scheme that can be proposed to boost use of bikes on weekends. Increasing the number of docks at a station and introducing new stations can be considered as a viable option based on the geographical analysis conducted above. Lastly the year-on-year comparison shows a dip int the total no. of users in the recent years. Covid-19 could be one of the reasons but, detailed examination should be done to understand the root-cause as a preventive business measure.</span></h4>
+<p>&nbsp;<p>
+<p>&nbsp;<p>
+
+<h2><span style="font-family:Monaco;color:#003B70">5. References</span></h2>
+<h4><span style="font-family:Times New Roman;color:#003B70">
+https://en.wikipedia.org/wiki/Citi_Bike  
+https://ride.citibikenyc.com/system-data  
+https://www.youtube.com/watch?v=hPTBZelmAh4  
+https://statisticsglobe.com/change-font-size-of-ggplot2-plot-in-r-axis-text-main-title-legend  
+https://community.rstudio.com/t/dplyr-way-s-and-base-r-way-s-of-creating-age-group-from-age/89226  
+https://www.youtube.com/watch?v=dx3khWsUO1Y  
+https://stackoverflow.com/questions/50132459/how-to-add-title-to-a-networkd3-visualisation-when-saving-as-a-web-page
+</span></h4>
+<p>&nbsp;<p>
+<p>&nbsp;<p>
+<p>&nbsp;<p>
